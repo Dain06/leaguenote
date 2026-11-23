@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
 import { requireUser } from "@/features/auth/queries";
+import EventList from "@/features/events/components/EventList";
+import { getTeamUpcomingEvents } from "@/features/events/queries";
 import InviteSection from "@/features/teams/components/InviteSection";
 import { getRoster, getTeam } from "@/features/teams/queries";
 
@@ -20,7 +23,10 @@ async function TeamContent({ params }: { params: Promise<{ id: string }> }) {
   const team = await getTeam(id, user.id);
   if (!team) notFound();
 
-  const roster = await getRoster(id);
+  const [roster, events] = await Promise.all([
+    getRoster(id),
+    getTeamUpcomingEvents(id),
+  ]);
   const isOperator = team.myRole === "operator";
 
   return (
@@ -42,10 +48,26 @@ async function TeamContent({ params }: { params: Promise<{ id: string }> }) {
         aria-label="일정"
         className="rounded-lg border border-black/10 p-4 dark:border-white/15"
       >
-        <h2 className="font-semibold">일정</h2>
-        <p className="mt-2 text-sm text-black/60 dark:text-white/60">
-          등록된 일정이 없습니다. (일정 등록은 다음 작업에서 만듭니다.)
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold">다가오는 일정</h2>
+          {isOperator && (
+            <Link
+              href={`/teams/${id}/events/new`}
+              className="text-sm font-medium underline"
+            >
+              + 일정 만들기
+            </Link>
+          )}
+        </div>
+        <div className="mt-2">
+          {events.length === 0 ? (
+            <p className="text-sm text-black/60 dark:text-white/60">
+              예정된 일정이 없습니다.
+            </p>
+          ) : (
+            <EventList events={events} />
+          )}
+        </div>
       </section>
 
       <section
