@@ -10,6 +10,7 @@ import TournamentPractice from "@/features/tournaments/components/TournamentPrac
 import TournamentSchedule from "@/features/tournaments/components/TournamentSchedule";
 import {
   getMatchEventIds,
+  getMatchResults,
   getMyResponse,
   getOperatorTeams,
   getScheduleRequests,
@@ -32,13 +33,14 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
   if (!UUID_PATTERN.test(id)) notFound();
   const tournament = await getTournament(id);
   if (!tournament) notFound();
-  const [participants, summary, myResponse, requests, operatorTeams] =
+  const [participants, summary, myResponse, requests, operatorTeams, matchResults] =
     await Promise.all([
       getTournamentParticipants(id),
       getResponseSummary(id),
       getMyResponse(id, user.id),
       getScheduleRequests(id),
       getOperatorTeams(user.id),
+      getMatchResults(id),
     ]);
   const matchEventIds = await getMatchEventIds(
     requests.filter((r) => r.status === "accepted").map((r) => r.id),
@@ -66,6 +68,13 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
           <dt className="text-black/50 dark:text-white/50">경기 일정 확정</dt>
           <dd>{formatKst(tournament.schedule_deadline_at)}까지 (4일)</dd>
         </dl>
+        {tournament.status === "confirmed" && (
+          <p className="mt-3 text-sm">
+            <Link href={`/tournaments/${id}/standings`} className="font-medium underline">
+              순위표 보기
+            </Link>
+          </p>
+        )}
       </section>
 
       <TournamentResponse
@@ -81,6 +90,7 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
         requests={requests}
         operatorTeamIds={new Set(operatorTeams.map((t) => t.id))}
         matchEventIds={matchEventIds}
+        results={new Map(matchResults.map((r) => [r.request_id, r]))}
       />
 
       <TournamentPractice

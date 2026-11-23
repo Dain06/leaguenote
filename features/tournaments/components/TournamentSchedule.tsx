@@ -5,9 +5,10 @@ import { formatKst } from "@/lib/time";
 
 import { respondSchedule, withdrawSchedule } from "../schedule-actions";
 import { allPairs, pairKey } from "../schedule";
-import type { Participant, ScheduleRequest, Tournament } from "../queries";
+import type { MatchResult, Participant, ScheduleRequest, Tournament } from "../queries";
 
 import ProposeForm from "./ProposeForm";
+import ResultForm from "./ResultForm";
 
 const smallButton =
   "rounded-md border border-black/20 px-3 py-1 text-xs hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10";
@@ -18,16 +19,19 @@ export default function TournamentSchedule({
   requests,
   operatorTeamIds,
   matchEventIds,
+  results,
 }: {
   tournament: Tournament;
   participants: Participant[];
   requests: ScheduleRequest[];
   operatorTeamIds: Set<string>;
   matchEventIds: Map<string, string>;
+  results: Map<string, MatchResult>;
 }) {
   if (tournament.status !== "confirmed") return null;
 
-  const open = new Date().getTime() < new Date(tournament.schedule_deadline_at).getTime();
+  const now = new Date().getTime();
+  const open = now < new Date(tournament.schedule_deadline_at).getTime();
   const active = participants.filter((p) => p.status === "active");
   const nameOf = new Map(active.map((p) => [p.team_id, p.team_name]));
   const mineIds = new Set(active.filter((p) => p.is_mine).map((p) => p.team_id));
@@ -82,6 +86,35 @@ export default function TournamentSchedule({
                     </Link>
                   )}
                 </p>
+              )}
+
+              {request?.status === "accepted" && (
+                <div data-testid="match-result">
+                  {results.get(request.id) ? (
+                    <p className="mt-1 text-sm font-medium">
+                      결과 {results.get(request.id)!.home_team_name}{" "}
+                      {results.get(request.id)!.home_score} :{" "}
+                      {results.get(request.id)!.away_score}{" "}
+                      {results.get(request.id)!.away_team_name}
+                    </p>
+                  ) : null}
+                  {canOperate && new Date(request.proposed_at).getTime() <= now && (
+                    <ResultForm
+                      tournamentId={tournament.id}
+                      requestId={request.id}
+                      homeName={request.from_team_name}
+                      awayName={request.to_team_name}
+                      initialHome={results.get(request.id)?.home_score}
+                      initialAway={results.get(request.id)?.away_score}
+                    />
+                  )}
+                  {!results.get(request.id) &&
+                    new Date(request.proposed_at).getTime() > now && (
+                      <p className="mt-1 text-xs text-black/50 dark:text-white/50">
+                        경기가 시작되면 운영자가 결과를 입력할 수 있습니다.
+                      </p>
+                    )}
+                </div>
               )}
 
               {request?.status === "pending" && request.from_team_id === myTeamId && (

@@ -104,6 +104,16 @@ export function tournamentMatchEarliest(startsOn: string): Date | null {
   return Number.isNaN(start.getTime()) ? null : start;
 }
 
+// ── 리그 순위 승점 규칙 (nice). PRD에 승점 계산이 미결정이라 임시 값이다. ──
+export const POINTS_PER_WIN = 3;
+export const POINTS_PER_DRAW = 1;
+export const POINTS_PER_LOSS = 0;
+
+/** 승·무·패 수로 승점을 계산한다 (임시: 승 3점, 무 1점, 패 0점) */
+export function standingsPoints(won: number, drawn: number, lost: number): number {
+  return won * POINTS_PER_WIN + drawn * POINTS_PER_DRAW + lost * POINTS_PER_LOSS;
+}
+
 /** 1인 경기가 가능한 종목(예: 배드민턴)의 팀 최소 인원 (PRD M1 규칙) */
 const MIN_PLAYERS_FOR_SOLO_SPORTS = 3;
 

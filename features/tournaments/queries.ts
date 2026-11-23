@@ -2,6 +2,8 @@
 import type { Team } from "@/features/teams/queries";
 import { createServerDb } from "@/lib/db/server";
 
+import type { StandingInput } from "./standings";
+
 export type ApplicationStatus = "waiting" | "matched" | "excluded";
 
 export type Application = {
@@ -168,6 +170,56 @@ export async function getEventOpponent(
   return request.from_team_id === myTeamId
     ? request.to_team_name
     : request.from_team_name;
+}
+
+export type MatchResult = {
+  request_id: string;
+  home_team_id: string;
+  home_team_name: string;
+  away_team_id: string;
+  away_team_name: string;
+  home_score: number;
+  away_score: number;
+  played_at: string;
+};
+
+/** 세부 경기 결과. 참가 팀의 팀원에게만 돌아온다. (PRD 7번) */
+export async function getMatchResults(id: string): Promise<MatchResult[]> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("tournament_results", { p_tournament_id: id });
+  return (data ?? []) as MatchResult[];
+}
+
+export type StandingsInfo = {
+  id: string;
+  sport: string;
+  city: string;
+  starts_on: string;
+  status: TournamentStatus;
+};
+
+/** 순위표를 볼 수 있는 사람(참가 팀 또는 같은 시 사용자)에게만 대회 정보를 돌려준다. */
+export async function getStandingsInfo(id: string): Promise<StandingsInfo | null> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("tournament_public_info", { p_tournament_id: id });
+  const rows = (data ?? []) as StandingsInfo[];
+  return rows[0] ?? null;
+}
+
+/** 순위표 재료(승·무·패·득실점). 승점·순위는 computeStandings가 계산한다. */
+export async function getStandingsRows(id: string): Promise<StandingInput[]> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("tournament_standings", { p_tournament_id: id });
+  return (data ?? []) as StandingInput[];
+}
+
+/** 내가 가입 때 고른 시에서 열리는 확정 대회 (순위표 보기용) */
+export async function getCityTournaments(): Promise<
+  { id: string; sport: string; city: string; starts_on: string }[]
+> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("my_city_tournaments");
+  return (data ?? []) as { id: string; sport: string; city: string; starts_on: string }[];
 }
 
 /** 합의된 경기마다 우리 팀의 일정 번호 (우리 팀 일정만 읽힌다) */
