@@ -10,6 +10,7 @@ const MENU_ITEMS: { label: string; href?: string }[] = [
   { label: "일정" },
   { label: "대회", href: "/tournaments" },
   { label: "모집", href: "/recruit" },
+  { label: "용병", href: "/mercenary" },
 ];
 
 export default function SiteHeader() {

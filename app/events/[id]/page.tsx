@@ -13,6 +13,12 @@ import {
   getEventAttendance,
   getEventSurvey,
 } from "@/features/events/queries";
+import EventMercenary from "@/features/mercenary/components/EventMercenary";
+import {
+  getApplicants,
+  getEventMercenaries,
+  getEventPost,
+} from "@/features/mercenary/queries";
 import { getEventOpponent } from "@/features/tournaments/queries";
 import { teamMinPlayers } from "@/lib/rules";
 import { formatKst } from "@/lib/time";
@@ -30,10 +36,16 @@ async function EventContent({ params }: { params: Promise<{ id: string }> }) {
   if (!UUID_PATTERN.test(id)) notFound();
   const event = await getEvent(id);
   if (!event) notFound();
-  const [survey, attendance] = await Promise.all([
+  const [survey, attendance, mercenaries, mercenaryPost] = await Promise.all([
     getEventSurvey(id),
     getEventAttendance(id),
+    getEventMercenaries(id),
+    getEventPost(id),
   ]);
+  const isOperator = survey.find((m) => m.user_id === user.id)?.role === "operator";
+  // 지원자 목록은 운영자에게만 돌아온다.
+  const applicants =
+    isOperator && mercenaryPost ? await getApplicants(mercenaryPost.id) : [];
 
   const minPlayers = teamMinPlayers(event.team.required_players);
 
@@ -79,7 +91,19 @@ async function EventContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <EventSurvey event={event} survey={survey} myUserId={user.id} />
-      <EventRoster event={event} survey={survey} myUserId={user.id} />
+      <EventRoster
+        event={event}
+        survey={survey}
+        myUserId={user.id}
+        mercenaryCount={mercenaries.length}
+      />
+      <EventMercenary
+        event={event}
+        isOperator={isOperator}
+        post={mercenaryPost}
+        applicants={applicants}
+        mercenaries={mercenaries}
+      />
       <EventAttendance event={event} attendance={attendance} myUserId={user.id} />
     </div>
   );

@@ -9,10 +9,13 @@ export default function EventRoster({
   event,
   survey,
   myUserId,
+  mercenaryCount = 0,
 }: {
   event: EventWithTeam;
   survey: SurveyMember[];
   myUserId: string;
+  /** 수락된 용병 수 (최소 인원 계산에 포함된다) */
+  mercenaryCount?: number;
 }) {
   const isOperator = survey.find((m) => m.user_id === myUserId)?.role === "operator";
   const confirmed = survey.filter((m) => m.confirmed);
@@ -21,7 +24,8 @@ export default function EventRoster({
   const minPlayers = teamMinPlayers(event.team.required_players);
   const open = event.status !== "cancelled" && isSurveyOpen(event.starts_at);
   const deadline = formatKst(attendancePollOpensAt(event.starts_at));
-  const short = confirmed.length > 0 && confirmed.length < minPlayers;
+  const total = confirmed.length + mercenaryCount;
+  const short = total > 0 && total < minPlayers;
 
   return (
     <section
@@ -31,7 +35,8 @@ export default function EventRoster({
       <h2 className="font-semibold">2) 선수 확정</h2>
 
       <p className="mt-2 text-sm" data-testid="roster-summary">
-        확정 선수 <strong>{confirmed.length}명</strong> / 최소 {minPlayers}명
+        확정 선수 <strong>{confirmed.length}명</strong>
+        {mercenaryCount > 0 && <> + 용병 {mercenaryCount}명</>} / 최소 {minPlayers}명
       </p>
       {confirmed.length > 0 && (
         <p className="mt-1 text-sm" data-testid="roster-names">
@@ -44,7 +49,7 @@ export default function EventRoster({
           data-testid="roster-short-warning"
           className="mt-2 text-sm text-amber-700 dark:text-amber-400"
         >
-          확정 인원이 최소 인원({minPlayers}명)보다 적습니다. 운영자 알림을 남겼습니다.
+          확정 인원({total}명)이 최소 인원({minPlayers}명)보다 적습니다. 운영자 알림을 남겼습니다.
         </p>
       )}
 

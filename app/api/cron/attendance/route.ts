@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   const { data: events, error } = await db
     .from("events")
     .select(
-      "id, team_id, starts_at, status, attendance_closes_at, teams(name), event_roster(user_id)",
+      "id, team_id, starts_at, status, attendance_closes_at, teams(name), event_roster(user_id, is_mercenary)",
     )
     .is("attendance_notified_at", null)
     .not("attendance_opens_at", "is", null)
@@ -64,7 +64,11 @@ export async function GET(request: Request) {
       continue;
     }
 
-    const roster = (event.event_roster ?? []) as { user_id: string }[];
+    // 용병은 팀 일정 화면을 볼 수 없어 출석 투표 대상이 아니다. 팀원 선수만 알린다.
+    const roster = ((event.event_roster ?? []) as {
+      user_id: string;
+      is_mercenary: boolean;
+    }[]).filter((p) => !p.is_mercenary);
 
     if (roster.length > 0) {
       const rows = roster.map((player) => ({
