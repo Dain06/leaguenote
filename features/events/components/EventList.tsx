@@ -24,7 +24,13 @@ export default function EventList({
             className="flex flex-col gap-0.5 rounded-md px-2 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
           >
             <span className="flex items-center gap-2">
-              <span className="rounded-full border border-black/15 px-2 py-0.5 text-xs dark:border-white/20">
+              <span
+                className={`rounded-full border px-2 py-0.5 text-xs ${
+                  event.type === "tournament"
+                    ? "border-transparent bg-foreground text-background"
+                    : "border-black/15 dark:border-white/20"
+                }`}
+              >
                 {EVENT_TYPE_LABEL[event.type]}
               </span>
               <span className="font-medium">{formatKst(event.starts_at)}</span>

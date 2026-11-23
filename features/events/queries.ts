@@ -16,6 +16,9 @@ export type EventWithTeam = EventSummary & {
   /** 출석 투표 게시·마감 시각 (일정을 만들 때 규칙으로 계산해 저장한 값) */
   attendance_opens_at: string;
   attendance_closes_at: string;
+  /** 대회 경기 일정이면 어느 대회·어느 합의에서 만들어졌는지 (연습 일정은 null) */
+  tournament_id: string | null;
+  schedule_request_id: string | null;
 };
 
 export type AttendanceResponse = "present" | "absent";
@@ -102,7 +105,7 @@ export async function getEvent(eventId: string): Promise<EventWithTeam | null> {
   const { data } = await db
     .from("events")
     .select(
-      "id, team_id, type, starts_at, location, status, attendance_opens_at, attendance_closes_at, teams(name, sport, required_players)",
+      "id, team_id, type, starts_at, location, status, attendance_opens_at, attendance_closes_at, tournament_id, schedule_request_id, teams(name, sport, required_players)",
     )
     .eq("id", eventId)
     .maybeSingle();
@@ -125,6 +128,8 @@ export async function getEvent(eventId: string): Promise<EventWithTeam | null> {
     attendance_closes_at:
       data.attendance_closes_at ??
       attendancePollClosesAt(data.starts_at).toISOString(),
+    tournament_id: data.tournament_id ?? null,
+    schedule_request_id: data.schedule_request_id ?? null,
     team,
   };
 }

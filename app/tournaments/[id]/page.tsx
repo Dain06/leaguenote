@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { requireUser } from "@/features/auth/queries";
 import { TOURNAMENT_STATUS_LABEL } from "@/features/tournaments/components/TournamentList";
 import TournamentResponse from "@/features/tournaments/components/TournamentResponse";
+import TournamentPractice from "@/features/tournaments/components/TournamentPractice";
 import TournamentSchedule from "@/features/tournaments/components/TournamentSchedule";
 import {
   getMatchEventIds,
@@ -80,6 +81,12 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
         requests={requests}
         operatorTeamIds={new Set(operatorTeams.map((t) => t.id))}
         matchEventIds={matchEventIds}
+      />
+
+      <TournamentPractice
+        tournament={tournament}
+        participants={participants}
+        operatorTeamIds={new Set(operatorTeams.map((t) => t.id))}
       />
 
       <section aria-label="참가 팀" className="rounded-lg border border-black/10 p-4 dark:border-white/15">

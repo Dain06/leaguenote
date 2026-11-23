@@ -13,6 +13,7 @@ import {
   getEventAttendance,
   getEventSurvey,
 } from "@/features/events/queries";
+import { getEventOpponent } from "@/features/tournaments/queries";
 import { teamMinPlayers } from "@/lib/rules";
 import { formatKst } from "@/lib/time";
 
@@ -36,6 +37,12 @@ async function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   const minPlayers = teamMinPlayers(event.team.required_players);
 
+  // 대회 경기 일정이면 상대 팀과 대회 화면으로 가는 링크를 보여 준다.
+  const opponent =
+    event.tournament_id && event.schedule_request_id
+      ? await getEventOpponent(event.tournament_id, event.schedule_request_id, event.team_id)
+      : null;
+
   return (
     <div className="flex flex-col gap-6">
       <section>
@@ -53,6 +60,14 @@ async function EventContent({ params }: { params: Promise<{ id: string }> }) {
             {EVENT_TYPE_LABEL[event.type]}
           </span>
         </div>
+        {event.tournament_id && (
+          <p className="mt-2 text-sm" data-testid="event-tournament">
+            대회 경기{opponent ? ` · 상대 ${opponent}` : ""} ·{" "}
+            <Link href={`/tournaments/${event.tournament_id}`} className="font-medium underline">
+              대회 보기
+            </Link>
+          </p>
+        )}
         <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
           <dt className="text-black/50 dark:text-white/50">장소</dt>
           <dd data-testid="event-location">{event.location}</dd>

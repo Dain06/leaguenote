@@ -153,6 +153,23 @@ export async function getScheduleRequests(id: string): Promise<ScheduleRequest[]
   return (data ?? []) as ScheduleRequest[];
 }
 
+/**
+ * 대회 경기 일정의 상대 팀 이름. 합의 요청(schedule_request_id)에서 우리 팀이 아닌 쪽을 찾는다.
+ * 대회 경기가 아니거나 볼 권한이 없으면 null
+ */
+export async function getEventOpponent(
+  tournamentId: string,
+  scheduleRequestId: string,
+  myTeamId: string,
+): Promise<string | null> {
+  const requests = await getScheduleRequests(tournamentId);
+  const request = requests.find((r) => r.id === scheduleRequestId);
+  if (!request) return null;
+  return request.from_team_id === myTeamId
+    ? request.to_team_name
+    : request.from_team_name;
+}
+
 /** 합의된 경기마다 우리 팀의 일정 번호 (우리 팀 일정만 읽힌다) */
 export async function getMatchEventIds(
   requestIds: string[],
