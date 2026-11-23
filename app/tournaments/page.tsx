@@ -5,8 +5,10 @@ import { Suspense } from "react";
 import { requireUser } from "@/features/auth/queries";
 import ApplicationForm from "@/features/tournaments/components/ApplicationForm";
 import ApplicationList from "@/features/tournaments/components/ApplicationList";
+import TournamentList from "@/features/tournaments/components/TournamentList";
 import {
   getMyApplications,
+  getMyTournaments,
   getOperatorTeams,
 } from "@/features/tournaments/queries";
 
@@ -14,9 +16,10 @@ export const metadata: Metadata = { title: "대회 · 리그노트" };
 
 async function TournamentsContent() {
   const user = await requireUser("/tournaments");
-  const [operatorTeams, applications] = await Promise.all([
+  const [operatorTeams, applications, tournaments] = await Promise.all([
     getOperatorTeams(user.id),
     getMyApplications(),
+    getMyTournaments(),
   ]);
 
   return (
@@ -33,6 +36,11 @@ async function TournamentsContent() {
         ) : (
           <ApplicationForm teams={operatorTeams} />
         )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="font-semibold">내 팀의 대회</h2>
+        <TournamentList tournaments={tournaments} />
       </section>
 
       <section className="flex flex-col gap-3">

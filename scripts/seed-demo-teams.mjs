@@ -2,6 +2,7 @@
 //
 // 사용법 (my-app 폴더에서):
 //   node --env-file=.env scripts/seed-demo-teams.mjs          가상 팀 만들기(여러 번 실행해도 중복 없음)
+//   node --env-file=.env scripts/seed-demo-teams.mjs --apply  가상 팀 만들기 + 마감이 지난 대회 신청까지 만들기
 //   node --env-file=.env scripts/seed-demo-teams.mjs --remove 가상 팀과 가상 운영자 계정 지우기
 //
 // .env의 NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY를 읽어 쓴다. (값은 출력하지 않는다)
@@ -35,6 +36,15 @@ const TEAMS = [
   ["노원 이글스", "풋살", 5, "서울특별시", "노원구", 9, 50, "4년 이상"],
   ["영등포 올드보이즈", "풋살", 5, "서울특별시", "영등포구", 16, 60, "4년 이상, 인원 차이 큼"],
   ["용산 새벽FC", "풋살", 5, "서울특별시", "용산구", 15, 100, "4년 이상, 경력 매우 김"],
+  // 풋살 · 서울 추가 4팀 — 경력 26~35개월·인원 11~13명이라 앞의 관악·성동과 함께 6팀 묶음이 만들어진다 (작업 10번)
+  ["광진 하늘FC", "풋살", 5, "서울특별시", "광진구", 12, 26, "2~4년, 묶음 대상"],
+  ["중랑 번개", "풋살", 5, "서울특별시", "중랑구", 12, 28, "2~4년, 묶음 대상"],
+  ["은평 파랑새", "풋살", 5, "서울특별시", "은평구", 11, 33, "2~4년, 묶음 대상"],
+  ["강북 솔로몬", "풋살", 5, "서울특별시", "강북구", 13, 35, "2~4년, 묶음 대상"],
+  // 농구 · 서울 추가 3팀 — 종로 덩크와 함께 경력 3~6개월 4팀 묶음이 만들어진다 (작업 10번)
+  ["마포 에어볼", "농구", 5, "서울특별시", "마포구", 11, 4, "2년 미만, 묶음 대상"],
+  ["송파 레이업", "농구", 5, "서울특별시", "송파구", 11, 5, "2년 미만, 묶음 대상"],
+  ["성북 로우포스트", "농구", 5, "서울특별시", "성북구", 12, 6, "2년 미만, 묶음 대상"],
   // 농구 · 서울 4팀 + 부산 2팀 — 같은 종목이어도 시가 다르면 묶이지 않는지 확인
   ["종로 덩크", "농구", 5, "서울특별시", "종로구", 10, 3, "2년 미만"],
   ["서초 리바운드", "농구", 5, "서울특별시", "서초구", 12, 22, "경계: 23개월 이하"],
@@ -145,8 +155,50 @@ async function seed() {
   console.log(`가상 팀 ${TEAMS.length}개 준비 완료 (이번에 새로 만든 팀 ${created}개).`);
 }
 
+// 가상 팀 모두가 "이미 신청 마감이 지난" 대회 참가 신청을 내게 한다. (매칭 점검용, 작업 10번)
+// 신청 마감 시각을 1분 전으로 두므로, 곧바로 /api/cron/matching을 불러 매칭을 시험할 수 있다.
+async function applyAll() {
+  const { data: teams, error } = await db
+    .from("teams")
+    .select("id, sport, city, district, created_by, demo_team_profiles(team_size, career_months)")
+    .eq("is_demo", true);
+  if (error) throw error;
+
+  const startsOn = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const deadlineAt = new Date(Date.now() - 60 * 1000).toISOString();
+
+  let created = 0;
+  for (const team of teams) {
+    const profile = Array.isArray(team.demo_team_profiles)
+      ? team.demo_team_profiles[0]
+      : team.demo_team_profiles;
+    if (!profile) continue;
+
+    const { error: insertError } = await db.from("tournament_applications").upsert(
+      {
+        team_id: team.id,
+        sport: team.sport,
+        city: team.city,
+        district: team.district,
+        team_size: profile.team_size,
+        career_months: profile.career_months,
+        tournament_starts_on: startsOn,
+        deadline_at: deadlineAt,
+        created_by: team.created_by,
+      },
+      { onConflict: "team_id,tournament_starts_on", ignoreDuplicates: true },
+    );
+    if (insertError) throw insertError;
+    created += 1;
+  }
+  console.log(`가상 팀 ${created}개의 대회 신청(시작일 ${startsOn}, 마감은 이미 지남)을 준비했습니다.`);
+}
+
 if (process.argv.includes("--remove")) {
   await removeAll();
 } else {
   await seed();
+  if (process.argv.includes("--apply")) await applyAll();
 }

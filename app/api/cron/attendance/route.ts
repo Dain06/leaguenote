@@ -6,35 +6,16 @@
 //   - 확정된 선수가 있으면 → 선수 모두에게 "출석 투표가 열렸습니다" 알림
 //   - 확정된 선수가 없으면 → 팀 운영자에게 "선수가 확정되지 않았습니다" 알림 (PRD M1 규칙)
 // 투표 화면 자체는 시각이 되면 알아서 열리므로, 이 호출이 늦어져도 투표에는 영향이 없다.
-import { timingSafeEqual } from "node:crypto";
-
+import { rejectUnlessCronAuthorized } from "@/lib/cron-auth";
 import { createAdminDb } from "@/lib/db/admin";
 import { formatKst } from "@/lib/time";
 
 // 같은 요청이 여러 번 와도 알림이 중복되지 않도록 일정마다 한 번만 처리한다.
 const MAX_EVENTS_PER_RUN = 100;
 
-function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-
-  const header = request.headers.get("authorization") ?? "";
-  const expected = `Bearer ${secret}`;
-  const a = Buffer.from(header);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
-
 export async function GET(request: Request) {
-  if (!process.env.CRON_SECRET) {
-    return Response.json(
-      { error: "CRON_SECRET이 설정되지 않았습니다." },
-      { status: 503 },
-    );
-  }
-  if (!isAuthorized(request)) {
-    return Response.json({ error: "허용되지 않은 요청입니다." }, { status: 401 });
-  }
+  const rejected = rejectUnlessCronAuthorized(request);
+  if (rejected) return rejected;
 
   const db = createAdminDb();
   const now = new Date();

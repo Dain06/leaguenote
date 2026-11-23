@@ -22,5 +22,18 @@ select cron.schedule(
   $$
 );
 
+-- 대회 매칭(작업 10번): 신청 마감이 지난 참가 신청을 묶어 대회를 만든다. 같은 방식으로 5분마다 호출한다.
+select cron.schedule(
+  'leaguenote-matching',
+  '*/5 * * * *',
+  $$
+  select net.http_get(
+    url := '<배포주소>/api/cron/matching',
+    headers := jsonb_build_object('Authorization', 'Bearer <CRON_SECRET>')
+  );
+  $$
+);
+
 -- 멈추려면:
 --   select cron.unschedule('leaguenote-attendance');
+--   select cron.unschedule('leaguenote-matching');

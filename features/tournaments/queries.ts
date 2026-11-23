@@ -33,6 +33,72 @@ export async function getOperatorTeams(userId: string): Promise<Team[]> {
   return teams;
 }
 
+export type TournamentStatus = "deciding" | "confirmed" | "cancelled";
+
+export type Tournament = {
+  id: string;
+  sport: string;
+  city: string;
+  starts_on: string;
+  status: TournamentStatus;
+  decision_deadline_at: string;
+  schedule_deadline_at: string;
+};
+
+export type Participant = {
+  team_id: string;
+  team_name: string;
+  district: string;
+  team_size: number;
+  career_months: number;
+  status: "active" | "cancelled";
+  is_mine: boolean;
+};
+
+/** 내 팀이 참가하는 대회 (대회 시작일이 가까운 순). 참가 팀의 팀원만 볼 수 있다. */
+export async function getMyTournaments(): Promise<
+  (Tournament & { team_count: number })[]
+> {
+  const db = await createServerDb();
+  const { data } = await db
+    .from("tournaments")
+    .select(
+      "id, sport, city, starts_on, status, decision_deadline_at, schedule_deadline_at, tournament_teams(count)",
+    )
+    .order("starts_on", { ascending: true });
+
+  return (data ?? []).map((row) => {
+    const counted = row.tournament_teams as { count: number }[] | null;
+    const { tournament_teams: _teams, ...tournament } = row;
+    void _teams;
+    return { ...(tournament as Tournament), team_count: counted?.[0]?.count ?? 0 };
+  });
+}
+
+/** 대회 한 개. 없거나 참가 팀이 아니면 null */
+export async function getTournament(id: string): Promise<Tournament | null> {
+  const db = await createServerDb();
+  const { data } = await db
+    .from("tournaments")
+    .select(
+      "id, sport, city, starts_on, status, decision_deadline_at, schedule_deadline_at",
+    )
+    .eq("id", id)
+    .maybeSingle();
+  return (data as Tournament | null) ?? null;
+}
+
+/** 대회 참가 팀 목록(팀 이름·지역·인원·경력). 참가 팀의 팀원에게만 돌려준다. */
+export async function getTournamentParticipants(
+  id: string,
+): Promise<Participant[]> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("tournament_participants", {
+    p_tournament_id: id,
+  });
+  return (data ?? []) as Participant[];
+}
+
 /** 내 팀들의 대회 참가 신청 (대회 시작일이 가까운 순) */
 export async function getMyApplications(): Promise<Application[]> {
   const db = await createServerDb();

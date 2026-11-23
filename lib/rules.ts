@@ -54,6 +54,37 @@ export function tournamentApplicationDeadline(startsOn: string): Date | null {
   );
 }
 
+// ── 대회 매칭 규칙 (PRD M2). *표시 값은 PRD에서 "임시"로 정한 값이다. ──
+
+/** 한 대회의 최소 팀 수 (임시) */
+export const TOURNAMENT_MIN_TEAMS = 4;
+/** 한 대회의 최대 팀 수 — 8팀을 넘는 묶음은 만들지 않는다 */
+export const TOURNAMENT_MAX_TEAMS = 8;
+/** 한 묶음 안에서 팀 인원(규모) 차이의 최대값, 명 (임시) */
+export const TOURNAMENT_MAX_TEAM_SIZE_DIFF = 3;
+
+/**
+ * 묶음 안에서 가장 경력이 짧은 팀의 경력(개월)을 기준으로, 허용되는 팀 경력 차이(개월).
+ *  - 2년(24개월) 미만: 6개월 / 2년 이상: 1년 / 4년(48개월) 이상: 2년 (구간 적용 방식은 임시 해석)
+ */
+export function allowedCareerGapMonths(shortestCareerMonths: number): number {
+  if (shortestCareerMonths >= 48) return 24;
+  if (shortestCareerMonths >= 24) return 12;
+  return 6;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** 매칭 뒤 팀원이 참가 여부를 정해야 하는 기한: 신청 마감 + 3일 */
+export function tournamentDecisionDeadline(applicationDeadline: Date): Date {
+  return new Date(applicationDeadline.getTime() + 3 * DAY_MS);
+}
+
+/** 두 팀의 경기 일정을 확정해야 하는 기한: 신청 마감 + 7일 (참가 여부 3일 + 일정 4일) */
+export function tournamentScheduleDeadline(applicationDeadline: Date): Date {
+  return new Date(applicationDeadline.getTime() + 7 * DAY_MS);
+}
+
 /** 1인 경기가 가능한 종목(예: 배드민턴)의 팀 최소 인원 (PRD M1 규칙) */
 const MIN_PLAYERS_FOR_SOLO_SPORTS = 3;
 
