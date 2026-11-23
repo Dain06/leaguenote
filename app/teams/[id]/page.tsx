@@ -71,6 +71,18 @@ async function TeamContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <section
+        aria-label="회비"
+        className="rounded-lg border border-black/10 p-4 dark:border-white/15"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-semibold">회비</h2>
+          <Link href={`/teams/${id}/dues`} className="text-sm font-medium underline">
+            {isOperator ? "회비 관리" : "내 납부 확인"}
+          </Link>
+        </div>
+      </section>
+
+      <section
         aria-label="팀원"
         className="rounded-lg border border-black/10 p-4 dark:border-white/15"
       >
