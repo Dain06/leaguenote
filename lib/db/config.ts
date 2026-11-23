@@ -14,3 +14,17 @@ export function isDbConfigured(): boolean {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 }
+
+/** 연결 정보를 꺼낸다. 없으면 어떤 값이 빠졌는지 한국어로 알려 주는 오류를 낸다. */
+export function getDbEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
+    throw new Error(
+      `데이터 저장소 연결 정보가 없습니다. .env에 ${DB_ENV_NAMES.url}와 ${DB_ENV_NAMES.anonKey}를 추가해 주세요.`,
+    );
+  }
+
+  return { url, anonKey };
+}
