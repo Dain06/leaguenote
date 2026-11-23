@@ -14,6 +14,22 @@ export type EventWithTeam = EventSummary & {
   team: { name: string; sport: string; required_players: number };
 };
 
+export type SurveyResponse = "attend" | "absent";
+
+export type SurveyMember = {
+  user_id: string;
+  nickname: string;
+  role: "operator" | "member";
+  response: SurveyResponse | null;
+};
+
+/** 지원자 조사 현황: 같은 팀원 모두의 닉네임과 응답(없으면 null = 미응답) */
+export async function getEventSurvey(eventId: string): Promise<SurveyMember[]> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("event_survey", { p_event_id: eventId });
+  return (data ?? []) as SurveyMember[];
+}
+
 /** 한 팀의 다가오는 일정 (취소된 일정 제외, 가까운 순) */
 export async function getTeamUpcomingEvents(
   teamId: string,
