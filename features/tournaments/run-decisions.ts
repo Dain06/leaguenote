@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatKst } from "@/lib/time";
 
 import { decideTournament, type TeamResponseState } from "./decision";
+import { unagreedPairs } from "./schedule";
 
 export type DecisionSummary = {
   checkedAt: string;
@@ -130,6 +131,94 @@ export async function evaluateTournament(
     summary.teamsCancelled += outcome.cancelledTeamIds.length;
   }
   return outcome.kind;
+}
+
+export type ScheduleClosingSummary = {
+  tournaments: number;
+  unagreedMatches: number;
+  notifications: number;
+};
+
+/**
+ * 경기 일정 조율 기한(신청 마감 +7일)이 지난 확정 대회에서 합의되지 않은 경기를 "미합의"로 보고 운영자에게 한 번 알린다.
+ * 합의되지 않았을 때의 처리 방식은 PRD에서 미결정이라, 지금은 표시와 알림만 한다.
+ */
+export async function runScheduleClosing(
+  db: SupabaseClient,
+  now: Date,
+): Promise<ScheduleClosingSummary> {
+  const summary: ScheduleClosingSummary = { tournaments: 0, unagreedMatches: 0, notifications: 0 };
+
+  const { data } = await db
+    .from("tournaments")
+    .select("id")
+    .eq("status", "confirmed")
+    .is("schedule_notified_at", null)
+    .lte("schedule_deadline_at", now.toISOString())
+    .limit(200);
+
+  for (const row of data ?? []) {
+    const tournamentId = row.id as string;
+
+    // 같은 대회를 동시에 처리하는 다른 호출과 겹치지 않도록 먼저 "알림 처리함"을 선점한다.
+    const { data: claimed } = await db
+      .from("tournaments")
+      .update({ schedule_notified_at: now.toISOString() })
+      .eq("id", tournamentId)
+      .is("schedule_notified_at", null)
+      .select("id");
+    if (!claimed || claimed.length === 0) continue;
+    summary.tournaments += 1;
+
+    const { data: teamRows } = await db
+      .from("tournament_teams")
+      .select("team_id, teams(name)")
+      .eq("tournament_id", tournamentId)
+      .eq("status", "active");
+    const teams = (teamRows ?? []) as TeamRow[];
+    const nameOf = new Map(
+      teams.map((t) => [
+        t.team_id,
+        (Array.isArray(t.teams) ? t.teams[0]?.name : t.teams?.name) ?? "",
+      ]),
+    );
+
+    const { data: accepted } = await db
+      .from("schedule_requests")
+      .select("from_team_id, to_team_id")
+      .eq("tournament_id", tournamentId)
+      .eq("status", "accepted");
+    const unagreed = unagreedPairs(
+      teams.map((t) => t.team_id),
+      (accepted ?? []).map((r) => [r.from_team_id as string, r.to_team_id as string]),
+    );
+    summary.unagreedMatches += unagreed.length;
+
+    // 미합의 경기가 있는 팀 운영자에게 팀별로 한 번씩 알린다.
+    const opponentsOf = new Map<string, string[]>();
+    for (const [a, b] of unagreed) {
+      opponentsOf.set(a, [...(opponentsOf.get(a) ?? []), nameOf.get(b) ?? ""]);
+      opponentsOf.set(b, [...(opponentsOf.get(b) ?? []), nameOf.get(a) ?? ""]);
+    }
+    for (const [teamId, opponents] of opponentsOf) {
+      const { data: operators } = await db
+        .from("team_members")
+        .select("user_id")
+        .eq("team_id", teamId)
+        .eq("role", "operator");
+      const rows = (operators ?? []).map((o) => ({
+        user_id: o.user_id as string,
+        kind: "schedule_unagreed",
+        message: `${nameOf.get(teamId)}: ${opponents.join(", ")}와(과)의 경기 일정이 기한 안에 합의되지 않아 "미합의"로 표시됩니다.`.slice(0, 200),
+        link: `/tournaments/${tournamentId}`,
+      }));
+      if (rows.length > 0) {
+        const { error } = await db.from("notifications").insert(rows);
+        if (!error) summary.notifications += rows.length;
+      }
+    }
+  }
+  return summary;
 }
 
 /** 참가 여부 결정 기한이 지난 대회를 모두 판정한다. 여러 번 불러도 같은 대회를 두 번 처리하지 않는다. */

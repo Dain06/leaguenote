@@ -97,6 +97,13 @@ export function tournamentScheduleDeadline(applicationDeadline: Date): Date {
   return new Date(applicationDeadline.getTime() + 7 * DAY_MS);
 }
 
+/** 대회 경기는 대회 시작일(한국 날짜) 0시 이후로만 잡을 수 있다. 형식이 틀리면 null */
+export function tournamentMatchEarliest(startsOn: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startsOn)) return null;
+  const start = new Date(`${startsOn}T00:00:00+09:00`);
+  return Number.isNaN(start.getTime()) ? null : start;
+}
+
 /** 1인 경기가 가능한 종목(예: 배드민턴)의 팀 최소 인원 (PRD M1 규칙) */
 const MIN_PLAYERS_FOR_SOLO_SPORTS = 3;
 

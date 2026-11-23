@@ -6,8 +6,12 @@ import { Suspense } from "react";
 import { requireUser } from "@/features/auth/queries";
 import { TOURNAMENT_STATUS_LABEL } from "@/features/tournaments/components/TournamentList";
 import TournamentResponse from "@/features/tournaments/components/TournamentResponse";
+import TournamentSchedule from "@/features/tournaments/components/TournamentSchedule";
 import {
+  getMatchEventIds,
   getMyResponse,
+  getOperatorTeams,
+  getScheduleRequests,
   getResponseSummary,
   getTournament,
   getTournamentParticipants,
@@ -27,11 +31,17 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
   if (!UUID_PATTERN.test(id)) notFound();
   const tournament = await getTournament(id);
   if (!tournament) notFound();
-  const [participants, summary, myResponse] = await Promise.all([
-    getTournamentParticipants(id),
-    getResponseSummary(id),
-    getMyResponse(id, user.id),
-  ]);
+  const [participants, summary, myResponse, requests, operatorTeams] =
+    await Promise.all([
+      getTournamentParticipants(id),
+      getResponseSummary(id),
+      getMyResponse(id, user.id),
+      getScheduleRequests(id),
+      getOperatorTeams(user.id),
+    ]);
+  const matchEventIds = await getMatchEventIds(
+    requests.filter((r) => r.status === "accepted").map((r) => r.id),
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,6 +72,14 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
         participants={participants}
         summary={summary}
         myResponse={myResponse}
+      />
+
+      <TournamentSchedule
+        tournament={tournament}
+        participants={participants}
+        requests={requests}
+        operatorTeamIds={new Set(operatorTeams.map((t) => t.id))}
+        matchEventIds={matchEventIds}
       />
 
       <section aria-label="참가 팀" className="rounded-lg border border-black/10 p-4 dark:border-white/15">

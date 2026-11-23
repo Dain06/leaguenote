@@ -132,6 +132,42 @@ export async function getMyResponse(
   return (data?.response as "join" | "decline" | undefined) ?? null;
 }
 
+export type ScheduleRequest = {
+  id: string;
+  from_team_id: string;
+  from_team_name: string;
+  to_team_id: string;
+  to_team_name: string;
+  proposed_at: string;
+  location: string;
+  status: "pending" | "accepted" | "rejected" | "withdrawn";
+  created_at: string;
+};
+
+/** 경기 일정 조율 요청 목록. 합의된 경기는 참가 팀 모두에게, 그 밖의 요청은 보낸·받은 팀에게만 온다. */
+export async function getScheduleRequests(id: string): Promise<ScheduleRequest[]> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("tournament_schedule_requests", {
+    p_tournament_id: id,
+  });
+  return (data ?? []) as ScheduleRequest[];
+}
+
+/** 합의된 경기마다 우리 팀의 일정 번호 (우리 팀 일정만 읽힌다) */
+export async function getMatchEventIds(
+  requestIds: string[],
+): Promise<Map<string, string>> {
+  if (requestIds.length === 0) return new Map();
+  const db = await createServerDb();
+  const { data } = await db
+    .from("events")
+    .select("id, schedule_request_id")
+    .in("schedule_request_id", requestIds);
+  return new Map(
+    (data ?? []).map((e) => [e.schedule_request_id as string, e.id as string]),
+  );
+}
+
 /** 내 팀들의 대회 참가 신청 (대회 시작일이 가까운 순) */
 export async function getMyApplications(): Promise<Application[]> {
   const db = await createServerDb();
