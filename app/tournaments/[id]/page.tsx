@@ -5,7 +5,10 @@ import { Suspense } from "react";
 
 import { requireUser } from "@/features/auth/queries";
 import { TOURNAMENT_STATUS_LABEL } from "@/features/tournaments/components/TournamentList";
+import TournamentResponse from "@/features/tournaments/components/TournamentResponse";
 import {
+  getMyResponse,
+  getResponseSummary,
   getTournament,
   getTournamentParticipants,
 } from "@/features/tournaments/queries";
@@ -18,13 +21,17 @@ const UUID_PATTERN =
 
 async function TournamentContent({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireUser(`/tournaments/${id}`);
+  const user = await requireUser(`/tournaments/${id}`);
 
   // 주소가 대회 번호 형식이 아니거나, 없는 대회이거나, 참가 팀이 아니면 "없음" 화면을 보여 준다.
   if (!UUID_PATTERN.test(id)) notFound();
   const tournament = await getTournament(id);
   if (!tournament) notFound();
-  const participants = await getTournamentParticipants(id);
+  const [participants, summary, myResponse] = await Promise.all([
+    getTournamentParticipants(id),
+    getResponseSummary(id),
+    getMyResponse(id, user.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,6 +56,13 @@ async function TournamentContent({ params }: { params: Promise<{ id: string }> }
           <dd>{formatKst(tournament.schedule_deadline_at)}까지 (4일)</dd>
         </dl>
       </section>
+
+      <TournamentResponse
+        tournament={tournament}
+        participants={participants}
+        summary={summary}
+        myResponse={myResponse}
+      />
 
       <section aria-label="참가 팀" className="rounded-lg border border-black/10 p-4 dark:border-white/15">
         <h2 className="font-semibold">참가 팀 ({participants.length}팀)</h2>

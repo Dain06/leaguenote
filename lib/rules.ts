@@ -75,6 +75,18 @@ export function allowedCareerGapMonths(shortestCareerMonths: number): number {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * 참가 여부 결정 기간이 끝났을 때, 응답하지 않은 팀원이 팀원 수의 과반수보다 많으면 그 팀은 취소된다 (PRD M2).
+ * 팀 인원은 앱에 가입한 팀원 수로 센다 (임시 해석).
+ */
+export function isTeamCancelledForNoResponse(
+  memberCount: number,
+  respondedCount: number,
+): boolean {
+  const unresponded = memberCount - respondedCount;
+  return unresponded * 2 > memberCount;
+}
+
 /** 매칭 뒤 팀원이 참가 여부를 정해야 하는 기한: 신청 마감 + 3일 */
 export function tournamentDecisionDeadline(applicationDeadline: Date): Date {
   return new Date(applicationDeadline.getTime() + 3 * DAY_MS);

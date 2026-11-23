@@ -34,6 +34,19 @@ select cron.schedule(
   $$
 );
 
+-- 대회 참가 여부 결정 기한 처리(작업 11번): 기한이 지난 대회를 확정하거나 취소한다.
+select cron.schedule(
+  'leaguenote-tournaments',
+  '*/5 * * * *',
+  $$
+  select net.http_get(
+    url := '<배포주소>/api/cron/tournaments',
+    headers := jsonb_build_object('Authorization', 'Bearer <CRON_SECRET>')
+  );
+  $$
+);
+
 -- 멈추려면:
+--   select cron.unschedule('leaguenote-tournaments');
 --   select cron.unschedule('leaguenote-attendance');
 --   select cron.unschedule('leaguenote-matching');

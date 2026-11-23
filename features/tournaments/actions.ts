@@ -5,10 +5,12 @@ import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/features/auth/queries";
 import { getOperatorTeams } from "./queries";
+import { createAdminDb } from "@/lib/db/admin";
 import { createServerDb } from "@/lib/db/server";
 import { teamMinPlayers, tournamentApplicationDeadline } from "@/lib/rules";
 import { formatKst } from "@/lib/time";
 
+import { evaluateTournament } from "./run-decisions";
 import { applicationSchema, type ApplicationFormState } from "./schemas";
 
 const UUID_PATTERN =
@@ -90,6 +92,31 @@ export async function applyTournament(
     done: true,
     message: `신청했습니다. ${formatKst(deadline)}에 신청이 마감되고 매칭이 진행됩니다.`,
   };
+}
+
+/**
+ * 대회 참가 여부 응답: 참가 팀 팀원이 "참가"/"불참"을 남긴다. 기간·권한은 데이터베이스 함수가 확인한다.
+ * 응답 직후 모두 응답했는지 확인해, 기한을 기다리지 않고 바로 확정한다.
+ */
+export async function respondTournament(
+  tournamentId: string,
+  response: "join" | "decline",
+): Promise<void> {
+  await requireUser(`/tournaments/${tournamentId}`);
+  if (!UUID_PATTERN.test(tournamentId)) return;
+
+  const db = await createServerDb();
+  const { error } = await db.rpc("respond_tournament", {
+    p_tournament_id: tournamentId,
+    p_response: response,
+  });
+
+  if (!error) {
+    // 판정은 모든 팀의 응답을 읽어야 하므로 서버 전용 연결로 한다.
+    await evaluateTournament(createAdminDb(), tournamentId, new Date());
+  }
+  revalidatePath(`/tournaments/${tournamentId}`);
+  revalidatePath("/tournaments");
 }
 
 /** 마감 전·매칭 대기 중인 신청 취소 (운영자만. 접근 규칙이 한 번 더 확인한다) */

@@ -41,6 +41,7 @@ export type Tournament = {
   city: string;
   starts_on: string;
   status: TournamentStatus;
+  cancel_reason: string | null;
   decision_deadline_at: string;
   schedule_deadline_at: string;
 };
@@ -63,7 +64,7 @@ export async function getMyTournaments(): Promise<
   const { data } = await db
     .from("tournaments")
     .select(
-      "id, sport, city, starts_on, status, decision_deadline_at, schedule_deadline_at, tournament_teams(count)",
+      "id, sport, city, starts_on, status, cancel_reason, decision_deadline_at, schedule_deadline_at, tournament_teams(count)",
     )
     .order("starts_on", { ascending: true });
 
@@ -81,7 +82,7 @@ export async function getTournament(id: string): Promise<Tournament | null> {
   const { data } = await db
     .from("tournaments")
     .select(
-      "id, sport, city, starts_on, status, decision_deadline_at, schedule_deadline_at",
+      "id, sport, city, starts_on, status, cancel_reason, decision_deadline_at, schedule_deadline_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -97,6 +98,38 @@ export async function getTournamentParticipants(
     p_tournament_id: id,
   });
   return (data ?? []) as Participant[];
+}
+
+export type ResponseSummary = {
+  team_id: string;
+  member_count: number;
+  responded_count: number;
+  join_count: number;
+};
+
+/** 팀별 응답 현황(응답한 수·참가라고 한 수). 참가 팀의 팀원에게만 돌려준다. */
+export async function getResponseSummary(id: string): Promise<ResponseSummary[]> {
+  const db = await createServerDb();
+  const { data } = await db.rpc("tournament_response_summary", {
+    p_tournament_id: id,
+  });
+  return (data ?? []) as ResponseSummary[];
+}
+
+/** 내가 남긴 응답. 아직 없으면 null */
+export async function getMyResponse(
+  id: string,
+  userId: string,
+): Promise<"join" | "decline" | null> {
+  const db = await createServerDb();
+  const { data } = await db
+    .from("tournament_responses")
+    .select("response")
+    .eq("tournament_id", id)
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  return (data?.response as "join" | "decline" | undefined) ?? null;
 }
 
 /** 내 팀들의 대회 참가 신청 (대회 시작일이 가까운 순) */
