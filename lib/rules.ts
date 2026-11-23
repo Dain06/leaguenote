@@ -10,6 +10,29 @@ export function attendancePollOpensAt(startsAt: string | Date): Date {
   return new Date(start - ATTENDANCE_POLL_HOURS_BEFORE_START * 60 * 60 * 1000);
 }
 
+/** 출석 투표는 경기·모임 시작 이 시간(분) 전에 마감된다 (PRD M1 규칙) */
+const ATTENDANCE_POLL_MINUTES_BEFORE_START_TO_CLOSE = 30;
+
+/** 출석 투표가 마감되는 시각 */
+export function attendancePollClosesAt(startsAt: string | Date): Date {
+  const start = new Date(startsAt).getTime();
+  return new Date(
+    start - ATTENDANCE_POLL_MINUTES_BEFORE_START_TO_CLOSE * 60 * 1000,
+  );
+}
+
+/** 지금 출석 투표를 받는 중인지 (게시 시각 이상, 마감 시각 미만) */
+export function isAttendancePollOpen(
+  opensAt: string | Date,
+  closesAt: string | Date,
+  now: Date = new Date(),
+): boolean {
+  return (
+    now.getTime() >= new Date(opensAt).getTime() &&
+    now.getTime() < new Date(closesAt).getTime()
+  );
+}
+
 /** 지금 지원자 조사(참석 의향)를 받을 수 있는지 */
 export function isSurveyOpen(startsAt: string | Date, now: Date = new Date()): boolean {
   return now.getTime() < attendancePollOpensAt(startsAt).getTime();

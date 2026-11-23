@@ -7,7 +7,13 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/features/auth/queries";
 import { createServerDb } from "@/lib/db/server";
 import { notifyTeamOperators } from "@/lib/notify";
-import { isSurveyOpen, teamMinPlayers } from "@/lib/rules";
+import {
+  attendancePollClosesAt,
+  attendancePollOpensAt,
+  isAttendancePollOpen,
+  isSurveyOpen,
+  teamMinPlayers,
+} from "@/lib/rules";
 import { formatKst, parseKstLocal } from "@/lib/time";
 
 import { getEvent } from "./queries";
@@ -57,6 +63,9 @@ export async function createEvent(
       starts_at: startsAt.toISOString(),
       location: parsed.data.location,
       created_by: user.id,
+      // 출석 투표 게시·마감 시각은 시작 시각에서 규칙(lib/rules.ts)으로 계산해 일정에 한 번 저장한다.
+      attendance_opens_at: attendancePollOpensAt(startsAt).toISOString(),
+      attendance_closes_at: attendancePollClosesAt(startsAt).toISOString(),
     })
     .select("id")
     .single();
@@ -128,6 +137,40 @@ export async function confirmRoster(
   revalidatePath(`/events/${eventId}`);
   revalidatePath("/", "layout");
   return { savedCount: count };
+}
+
+/**
+ * 출석 투표: 확정된 선수가 내 출석 여부(출석/불참)를 남기거나 바꾼다.
+ * 게시 시각 이후 마감 시각 전까지만 받는다. (확정 선수인지는 데이터베이스 접근 규칙이 확인)
+ */
+export async function respondAttendance(
+  eventId: string,
+  response: "present" | "absent",
+) {
+  const user = await requireUser(`/events/${eventId}`);
+  const event = await getEvent(eventId);
+
+  if (
+    !event ||
+    event.status === "cancelled" ||
+    !isAttendancePollOpen(event.attendance_opens_at, event.attendance_closes_at)
+  ) {
+    revalidatePath(`/events/${eventId}`);
+    return;
+  }
+
+  const db = await createServerDb();
+  await db.from("attendance").upsert(
+    {
+      event_id: eventId,
+      user_id: user.id,
+      response,
+      responded_at: new Date().toISOString(),
+    },
+    { onConflict: "event_id,user_id" },
+  );
+
+  revalidatePath(`/events/${eventId}`);
 }
 
 /**
