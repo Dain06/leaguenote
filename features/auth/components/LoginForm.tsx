@@ -6,11 +6,12 @@ import { useActionState } from "react";
 import { login } from "../actions";
 import FormField from "./FormField";
 
-export default function LoginForm() {
+export default function LoginForm({ next = "/" }: { next?: string }) {
   const [state, action, pending] = useActionState(login, undefined);
 
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <FormField
         name="email"
         label="이메일"

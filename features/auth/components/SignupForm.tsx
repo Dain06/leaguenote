@@ -3,17 +3,19 @@
 // Design Ref: §3.3 회원가입 — 이메일, 비밀번호, 닉네임, 연락처, 거주 시·구
 import { useActionState } from "react";
 
+import { CITIES } from "@/lib/regions";
+
 import { signup } from "../actions";
-import { CITIES } from "../schemas";
 import FormField from "./FormField";
 
-export default function SignupForm() {
+export default function SignupForm({ next = "/" }: { next?: string }) {
   const [state, action, pending] = useActionState(signup, undefined);
   const errors = state?.errors;
   const values = state?.values;
 
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
+      <input type="hidden" name="next" value={next} />
       <FormField
         name="email"
         label="이메일"

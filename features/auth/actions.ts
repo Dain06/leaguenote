@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { isDbConfigured } from "@/lib/db/config";
 import { createServerDb } from "@/lib/db/server";
 
+import { safeNextPath } from "./next";
 import { loginSchema, signupSchema, type AuthFormState } from "./schemas";
 
 const NO_DB_MESSAGE =
@@ -54,7 +55,7 @@ export async function signup(
     };
   }
 
-  redirect("/");
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function login(
@@ -81,7 +82,7 @@ export async function login(
     };
   }
 
-  redirect("/");
+  redirect(safeNextPath(formData.get("next")));
 }
 
 export async function logout() {
