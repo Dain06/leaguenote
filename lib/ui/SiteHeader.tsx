@@ -8,7 +8,7 @@ import AuthMenu from "@/features/auth/components/AuthMenu";
 const MENU_ITEMS: { label: string; href?: string }[] = [
   { label: "홈", href: "/" },
   { label: "일정" },
-  { label: "대회" },
+  { label: "대회", href: "/tournaments" },
 ];
 
 export default function SiteHeader() {

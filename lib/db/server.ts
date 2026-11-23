@@ -2,7 +2,6 @@
 // 로그인 정보(쿠키)를 읽고 갱신하므로 서버 컴포넌트·서버 액션에서만 쓴다.
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-
 import { getDbEnv } from "./config";
 
 export async function createServerDb() {

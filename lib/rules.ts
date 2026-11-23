@@ -38,6 +38,22 @@ export function isSurveyOpen(startsAt: string | Date, now: Date = new Date()): b
   return now.getTime() < attendancePollOpensAt(startsAt).getTime();
 }
 
+/** 대회 참가 신청은 대회 시작 이 주(week) 전에 마감된다 (PRD M2 규칙) */
+const TOURNAMENT_APPLICATION_WEEKS_BEFORE_START = 3;
+
+/**
+ * 대회 참가 신청 마감 시각: 대회 시작일(한국 날짜, "2026-12-21") 0시에서 3주 전.
+ * 날짜 형식이 틀리면 null.
+ */
+export function tournamentApplicationDeadline(startsOn: string): Date | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startsOn)) return null;
+  const start = new Date(`${startsOn}T00:00:00+09:00`).getTime();
+  if (Number.isNaN(start)) return null;
+  return new Date(
+    start - TOURNAMENT_APPLICATION_WEEKS_BEFORE_START * 7 * 24 * 60 * 60 * 1000,
+  );
+}
+
 /** 1인 경기가 가능한 종목(예: 배드민턴)의 팀 최소 인원 (PRD M1 규칙) */
 const MIN_PLAYERS_FOR_SOLO_SPORTS = 3;
 
