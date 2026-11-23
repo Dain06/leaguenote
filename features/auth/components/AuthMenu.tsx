@@ -1,6 +1,8 @@
 // Design Ref: §3.1 공통 메뉴 — 로그인 전에는 "로그인·가입", 로그인 후에는 닉네임과 "로그아웃"
 import Link from "next/link";
 
+import { getUnreadCount } from "@/features/notifications/queries";
+
 import { logout } from "../actions";
 import { getCurrentUser } from "../queries";
 
@@ -23,8 +25,21 @@ export default async function AuthMenu() {
     );
   }
 
+  const unread = await getUnreadCount();
+
   return (
     <div className="flex items-center gap-2 text-sm">
+      <Link href="/notifications" className={itemClass}>
+        알림
+        {unread > 0 && (
+          <span
+            data-testid="unread-badge"
+            className="ml-1 rounded-full bg-foreground px-1.5 py-0.5 text-xs text-background"
+          >
+            {unread}
+          </span>
+        )}
+      </Link>
       <span data-testid="current-nickname" className="font-medium">
         {user.nickname || "회원"}님
       </span>

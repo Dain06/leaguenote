@@ -21,6 +21,8 @@ export type SurveyMember = {
   nickname: string;
   role: "operator" | "member";
   response: SurveyResponse | null;
+  /** 확정된 선수인지 (작업 6번) */
+  confirmed: boolean;
 };
 
 /** 지원자 조사 현황: 같은 팀원 모두의 닉네임과 응답(없으면 null = 미응답) */

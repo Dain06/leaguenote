@@ -6,10 +6,15 @@ import { redirect } from "next/navigation";
 
 import { requireUser } from "@/features/auth/queries";
 import { createServerDb } from "@/lib/db/server";
-import { isSurveyOpen } from "@/lib/rules";
-import { parseKstLocal } from "@/lib/time";
+import { notifyTeamOperators } from "@/lib/notify";
+import { isSurveyOpen, teamMinPlayers } from "@/lib/rules";
+import { formatKst, parseKstLocal } from "@/lib/time";
 
+import { getEvent } from "./queries";
 import { eventSchema, type EventFormState } from "./schemas";
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function createEvent(
   teamId: string,
@@ -64,6 +69,65 @@ export async function createEvent(
   }
 
   redirect(`/events/${data.id}`);
+}
+
+export type RosterFormState =
+  | { message?: string; savedCount?: number }
+  | undefined;
+
+/**
+ * 선수 확정: 운영자가 참석 의향을 남긴 팀원 중에서 선수를 고른다. (같은 일정은 다시 확정해 바꿀 수 있다)
+ * 출석 투표가 게시되기 전까지만 가능하고, 확정 인원이 최소 인원보다 적으면 운영자에게 알림을 남긴다.
+ */
+export async function confirmRoster(
+  eventId: string,
+  // useActionState가 이전 결과를 첫 인자로 넘겨 주므로 받아야 하지만, 이 함수에서는 쓰지 않는다.
+  _prevState: RosterFormState,
+  formData: FormData,
+): Promise<RosterFormState> {
+  await requireUser(`/events/${eventId}`);
+
+  const event = await getEvent(eventId);
+  if (!event) return { message: "일정을 찾을 수 없습니다." };
+  if (event.status === "cancelled" || !isSurveyOpen(event.starts_at)) {
+    return {
+      message: "선수 확정은 출석 투표가 게시되기 전까지만 할 수 있습니다.",
+    };
+  }
+
+  const playerIds = formData
+    .getAll("players")
+    .filter((v): v is string => typeof v === "string" && UUID_PATTERN.test(v));
+
+  const db = await createServerDb();
+  const { data, error } = await db.rpc("confirm_roster", {
+    p_event_id: eventId,
+    p_user_ids: playerIds,
+  });
+
+  if (error) {
+    return {
+      message: error.message.includes("운영자")
+        ? "선수 확정은 팀 운영자만 할 수 있습니다."
+        : "선수를 확정하지 못했습니다. 참석 의향을 남긴 팀원만 확정할 수 있습니다.",
+    };
+  }
+
+  const count = Number(data ?? 0);
+  const minPlayers = teamMinPlayers(event.team.required_players);
+
+  // 확정 인원이 최소 인원보다 적으면 팀 운영자에게 알린다. (PRD M1 규칙)
+  if (count > 0 && count < minPlayers) {
+    await notifyTeamOperators(db, event.team_id, {
+      kind: "roster_short",
+      message: `${event.team.name} ${formatKst(event.starts_at)} 일정의 확정 인원(${count}명)이 최소 인원(${minPlayers}명)보다 적습니다.`,
+      link: `/events/${eventId}`,
+    });
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  revalidatePath("/", "layout");
+  return { savedCount: count };
 }
 
 /**

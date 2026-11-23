@@ -28,6 +28,11 @@ export default function EventList({
                 {EVENT_TYPE_LABEL[event.type]}
               </span>
               <span className="font-medium">{formatKst(event.starts_at)}</span>
+              {event.status === "confirmed" && (
+                <span className="text-xs text-green-700 dark:text-green-400">
+                  선수 확정
+                </span>
+              )}
             </span>
             <span className="text-black/60 dark:text-white/60">
               {event.team_name ? `${event.team_name} · ` : ""}

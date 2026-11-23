@@ -1,14 +1,11 @@
 import { Suspense } from "react";
 
 import HomeUpcomingEvents from "@/features/events/components/HomeUpcomingEvents";
+import HomeNotifications from "@/features/notifications/components/HomeNotifications";
 import HomeTeams from "@/features/teams/components/HomeTeams";
 import { DB_ENV_NAMES, isDbConfigured } from "@/lib/db/config";
 
 // Design Ref: §3.1 `/` 홈 — 내 팀 목록, 다가오는 일정, 알림 개수
-// 알림은 작업 6번 이후에 만들어지므로 아직 빈 자리만 보여 준다.
-const PLACEHOLDER_SECTIONS = [
-  { title: "알림", empty: "새 알림이 있으면 여기에 개수가 보입니다." },
-];
 
 export default function Home() {
   const dbReady = isDbConfigured();
@@ -51,17 +48,18 @@ export default function Home() {
             <HomeUpcomingEvents />
           </Suspense>
         </article>
-        {PLACEHOLDER_SECTIONS.map((section) => (
-          <article
-            key={section.title}
-            className="rounded-lg border border-black/10 p-4 dark:border-white/15"
+        <article className="rounded-lg border border-black/10 p-4 dark:border-white/15">
+          <h2 className="font-semibold">알림</h2>
+          <Suspense
+            fallback={
+              <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+                불러오는 중...
+              </p>
+            }
           >
-            <h2 className="font-semibold">{section.title}</h2>
-            <p className="mt-2 text-sm text-black/60 dark:text-white/60">
-              {section.empty}
-            </p>
-          </article>
-        ))}
+            <HomeNotifications />
+          </Suspense>
+        </article>
       </section>
 
       <section

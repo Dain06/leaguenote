@@ -5,6 +5,7 @@ import { Suspense } from "react";
 
 import { requireUser } from "@/features/auth/queries";
 import { EVENT_TYPE_LABEL } from "@/features/events/components/EventList";
+import EventRoster from "@/features/events/components/EventRoster";
 import EventSurvey from "@/features/events/components/EventSurvey";
 import { getEvent, getEventSurvey } from "@/features/events/queries";
 import { teamMinPlayers } from "@/lib/rules";
@@ -15,9 +16,8 @@ export const metadata: Metadata = { title: "일정 · 리그노트" };
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// 선수 확정·출석 투표는 다음 작업에서 이 자리에 만든다. (Design §3.2 일정 상세)
+// 출석 투표는 다음 작업에서 이 자리에 만든다. (Design §3.2 일정 상세)
 const NEXT_STEPS = [
-  { title: "2) 선수 확정", note: "운영자가 참가할 선수를 확정하는 기능은 다음 작업에서 만듭니다." },
   { title: "3) 출석 투표", note: "시작 2시간 전에 자동으로 게시되는 출석 투표는 그 뒤에 만듭니다." },
 ];
 
@@ -61,6 +61,7 @@ async function EventContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       <EventSurvey event={event} survey={survey} myUserId={user.id} />
+      <EventRoster event={event} survey={survey} myUserId={user.id} />
 
       {NEXT_STEPS.map((step) => (
         <section
