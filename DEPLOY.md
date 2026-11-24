@@ -71,7 +71,12 @@ Supabase 대시보드 → Authentication:
    - Redirect URLs에 `https://<배포 주소>/auth/callback` 추가
 2. **Providers → Email → "Confirm email" 켜기** (지금은 개발 편의를 위해 꺼져 있습니다)
    - 켜면 가입 직후 확인 메일이 가고, 링크를 누르면 `/auth/callback`을 거쳐 로그인됩니다. 확인 전 로그인은 안내 문구가 나옵니다.
-3. **메일 발송 한도:** 기본 메일 서버는 시간당 발송 수가 매우 적어 시범 운영 인원이 가입하기 어렵습니다. 운영 전에 Authentication → SMTP Settings에서 별도 메일 서비스를 연결하는 것을 권장합니다.
+3. **메일 발송 한도:** 기본 메일 서버는 시간당 약 2통이라 시범 운영 인원이 가입하기 어렵습니다. 운영 프로젝트는 이메일 확인이 이미 켜져 있으므로 별도 메일 서비스(SMTP)를 연결해야 합니다.
+   1. 메일 서비스(예: Resend)에 가입하고, **보내는 도메인(또는 주소)을 인증**한 뒤 SMTP 정보를 받습니다. (이 단계는 직접 하셔야 합니다)
+   2. `.env`에 `PROD_SMTP_HOST`, `PROD_SMTP_PORT`, `PROD_SMTP_USER`, `PROD_SMTP_PASS`, `PROD_SMTP_FROM`을 넣습니다. (선택: `PROD_SMTP_SENDER_NAME`, `PROD_EMAIL_RATE_LIMIT`)
+   3. 값 점검: `node --env-file=.env scripts/configure-smtp.mjs`
+   4. 적용: `node --env-file=.env scripts/configure-smtp.mjs --apply` (운영 프로젝트에만 적용, 값은 출력하지 않음)
+   5. 배포 사이트에서 가입 → 확인 메일 수신 → 링크 클릭 → 로그인되는지 확인합니다.
 
 > 개발용(`leaguenote`)과 운영용(`leaguenote-prod`, 2026-11-24 생성, 서울)은 **서로 다른 Supabase 프로젝트**입니다. 운영용에는 마이그레이션 18개가 적용되어 있고 데이터는 비어 있습니다(가상 팀 없음). 운영용 키·비밀번호는 `.env`의 `PROD_` 접두사 값입니다(`PROD_SUPABASE_PROJECT_REF`, `PROD_NEXT_PUBLIC_SUPABASE_URL`, `PROD_NEXT_PUBLIC_SUPABASE_ANON_KEY`, `PROD_SUPABASE_SERVICE_ROLE_KEY`, `PROD_SUPABASE_DB_PASSWORD`, `PROD_CRON_SECRET`). 새 마이그레이션을 만들면 **두 프로젝트에 모두** 적용해야 합니다.
 > 이 4번 설정(이메일 확인·Site URL·Redirect URLs·SMTP)은 **운영용 프로젝트**에 하세요. 개발용에서는 이메일 확인을 켜지 않는 편이 시험에 편합니다.
