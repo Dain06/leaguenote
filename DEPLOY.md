@@ -71,6 +71,7 @@ Supabase 대시보드 → Authentication:
    - Redirect URLs에 `https://<배포 주소>/auth/callback` 추가
 2. **Providers → Email → "Confirm email" 켜기** (지금은 개발 편의를 위해 꺼져 있습니다)
    - 켜면 가입 직후 확인 메일이 가고, 링크를 누르면 `/auth/callback`을 거쳐 로그인됩니다. 확인 전 로그인은 안내 문구가 나옵니다.
+   > **현재 상태(2026-11-24):** 시범 운영·심사 동안 운영 프로젝트의 Confirm email을 **꺼 두었습니다**(`mailer_autoconfirm` 켜짐). 가입하면 메일 없이 바로 로그인되며 이메일 본인 확인은 하지 않습니다. 정식 공개 전에는 아래 3번대로 SMTP를 연결하고 Confirm email을 다시 켜세요(대시보드 Authentication → Providers → Email, 또는 `config/auth`의 `mailer_autoconfirm: false`).
 3. **메일 발송 한도:** 기본 메일 서버는 시간당 약 2통이라 시범 운영 인원이 가입하기 어렵습니다. 운영 프로젝트는 이메일 확인이 이미 켜져 있으므로 별도 메일 서비스(SMTP)를 연결해야 합니다.
    1. 메일 서비스(예: Resend)에 가입하고, **보내는 도메인(또는 주소)을 인증**한 뒤 SMTP 정보를 받습니다. (이 단계는 직접 하셔야 합니다)
    2. `.env`에 `PROD_SMTP_HOST`, `PROD_SMTP_PORT`, `PROD_SMTP_USER`, `PROD_SMTP_PASS`, `PROD_SMTP_FROM`을 넣습니다. (선택: `PROD_SMTP_SENDER_NAME`, `PROD_EMAIL_RATE_LIMIT`)
