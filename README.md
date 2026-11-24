@@ -5,7 +5,7 @@ Next.js(App Router) + Supabase(로그인·데이터) + Tailwind, 배포는 Verce
 
 - **접속 주소:** https://leaguenote.vercel.app
 - **저장소:** https://github.com/Dain06/leaguenote
-- **시범 운영 안내:** 정식 공개 전 단계입니다. 개인정보 처리방침 문의처와 이메일 확인 설정 등이 남아 있습니다([CHECK.md](CHECK.md) 참고).
+- **시범 운영 안내:** 시범 운영·심사용 배포입니다. 가입은 이메일 확인 없이 바로 되며(본인 확인 없음), 정식 공개 전에 도메인·SMTP 연결과 개인정보 처리방침 문의처·법률 검토가 필요합니다([CHECK.md](CHECK.md) 참고).
 
 ## 문서
 
