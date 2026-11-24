@@ -27,6 +27,7 @@
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 공개 키 (접근 규칙으로 보호됨) | 공개 가능 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 서버 전용 관리 키 (예약 작업·알림) | **절대 비공개** |
 | `CRON_SECRET` | 예약 작업이 앱 주소를 부를 때의 확인용 비밀 값 | **절대 비공개** |
+| `SITE_URL` | 이 앱의 공개 주소(예: `https://leaguenote.vercel.app`). 확인 메일의 복귀 주소로 쓰이며, 없으면 요청 헤더로 추정(로컬 개발용). **배포 주소가 정해진 뒤 Production에 직접 등록** (`.env`에는 없음) | 서버 전용 |
 
 `GITHUB_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `VERCEL_TOKEN`, `OPENAI_API_KEY` 등 개발 도구용 값은 Vercel에 등록하지 않습니다.
 
