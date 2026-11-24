@@ -97,6 +97,11 @@ export default function SignupForm({ next = "/" }: { next?: string }) {
           {state.message}
         </p>
       )}
+      {state?.notice && (
+        <p role="status" className="text-sm text-green-700 dark:text-green-400">
+          {state.notice}
+        </p>
+      )}
 
       <button
         type="submit"

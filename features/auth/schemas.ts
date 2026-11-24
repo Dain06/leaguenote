@@ -40,6 +40,8 @@ export type AuthFormState =
   | {
       errors?: Record<string, string[]>;
       message?: string;
+      /** 오류가 아닌 안내 (예: 가입 확인 메일을 보냈습니다) */
+      notice?: string;
       values?: Record<string, string>;
     }
   | undefined;
