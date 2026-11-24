@@ -3,6 +3,10 @@
 동호회·사회인 운동 팀의 **일정·출석 관리(M1)** 와 **동네 대회 매칭(M2)** 을 돕는 웹 앱입니다.
 Next.js(App Router) + Supabase(로그인·데이터) + Tailwind, 배포는 Vercel을 씁니다.
 
+- **접속 주소:** https://leaguenote.vercel.app
+- **저장소:** https://github.com/Dain06/leaguenote
+- **시범 운영 안내:** 정식 공개 전 단계입니다. 개인정보 처리방침 문의처와 이메일 확인 설정 등이 남아 있습니다([CHECK.md](CHECK.md) 참고).
+
 ## 문서
 
 | 문서 | 내용 |
