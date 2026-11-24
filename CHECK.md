@@ -44,7 +44,7 @@
 | 순위 | 항목 | 심각도 | 해야 할 일 |
 |:---:|---|:---:|---|
 | 1 | ~~**개인정보 처리방침·수집 동의·탈퇴**~~ ✅ 코드 완료 | 높음 | 구현됨(`/privacy`, 가입 동의·만 14세 체크, `/account` 탈퇴, 삭제 규칙 정리). **남은 것:** `lib/privacy.ts`의 문의처 기재, 처리방침 문구 법률 검토, 보관 기간·최소 연령 확정 |
-| 2 | **Supabase "Confirm email" 켜기 + 최소 비밀번호 8자 + Redirect URLs** | 높음 | 대시보드 설정(배포 주소 확정 후). 중복 이메일 안내 문구 통일 |
+| 2 | **Supabase "Confirm email" 켜기 + Redirect URLs** (최소 비밀번호 8자는 ✅ 적용 완료) | 높음 | 배포 주소 확정 후 Site URL·Redirect URLs와 함께 켬(현재 `mailer_autoconfirm` 켜짐, Site URL `localhost`). 중복 이메일 안내 문구 통일 |
 | 3 | **운영용 Supabase 프로젝트 분리** | 높음 | 운영용 새 프로젝트에 `supabase/migrations/` 순서대로 적용, Preview에는 관리 키 등록 금지, 가상 데이터(팀 25개·가상 운영자) 제거 |
 | 4 | **요청 횟수 제한(레이트 리밋)·별도 SMTP·팀 생성 한도** | 중간 | Vercel WAF 또는 Upstash 검토, 기본 메일 서버는 발송 한도가 낮아 SMTP 연결 |
 | 5 | **확인 메일 복귀 주소 고정** | 낮음 | `x-forwarded` 헤더 대신 고정 `SITE_URL` 환경 변수 사용 |

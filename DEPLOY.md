@@ -129,7 +129,7 @@ Supabase 대시보드 → Authentication:
 **공개 전에 남은 것** (코드 밖 설정이거나 기능 추가가 필요)
 1. ~~개인정보 처리방침·수집 동의·탈퇴 기능~~ — 구현 완료 (`/privacy`, 가입 동의·만 14세 확인 체크, `/account` 계정 탈퇴, `20261124010000_privacy_consent_withdrawal.sql`). **공개 전에 직접 채울 것:** `lib/privacy.ts`의 `PRIVACY_CONTACT`(문의처), 처리방침 문구의 법률 검토, 보관 기간·최소 연령(임시: 탈퇴 시까지, 만 14세)
 2. ~~초대 링크 관리와 팀원 내보내기~~ — 구현 완료(위 "이미 고친 것" 참고)
-3. **Supabase "Confirm email" 켜기, 최소 비밀번호 8자, Redirect URLs 정리** (4번 항목)
+3. **Supabase "Confirm email" 켜기, Redirect URLs 정리** (4번 항목) — 최소 비밀번호 8자는 2026-11-24에 적용 완료. 나머지는 배포 주소가 정해진 뒤 한 번에 바꿉니다(지금 켜면 로컬 시험 가입에 메일이 필요해지고, Site URL이 아직 `http://localhost:3000`입니다)
 4. **운영용 Supabase 프로젝트 분리** (Preview 배포에는 관리 키를 넣지 않도록 3번 명령은 Production만 등록하게 이미 고쳤습니다)
 5. **요청 횟수 제한(레이트 리밋)과 별도 SMTP** — Vercel WAF 규칙 또는 Upstash 사용 검토
 6. 예약 작업 비밀 값을 Supabase Vault로 옮기기, 확인 메일 복귀 주소를 고정 환경 변수로 쓰기(낮음)
