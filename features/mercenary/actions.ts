@@ -6,9 +6,12 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/features/auth/queries";
 import { getEvent } from "@/features/events/queries";
 import { createAdminDb } from "@/lib/db/admin";
+import { friendlyDbError } from "@/lib/db/errors";
 import { createServerDb } from "@/lib/db/server";
 import { isSurveyOpen } from "@/lib/rules";
 import { formatKst } from "@/lib/time";
+
+import { getEventPost } from "./queries";
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -45,7 +48,7 @@ export async function createMercenaryPost(
     p_event_id: eventId,
     p_needed_count: Number(needed),
   });
-  if (error) return { message: error.message };
+  if (error) return { message: friendlyDbError(error) };
 
   refresh(eventId);
   return { done: true, message: "용병 모집 글을 올렸습니다." };
@@ -102,6 +105,12 @@ export async function acceptMercenary(
     return;
   }
 
+  // 화면이 보낸 일정 번호와 글 번호가 서로 맞는 짝인지 확인한다. (다른 일정의 마감·장소로 처리되는 것을 막는다)
+  if ((await getEventPost(eventId))?.id !== postId) {
+    refresh(eventId);
+    return;
+  }
+
   const db = await createServerDb();
   const { error } = await db.rpc("accept_mercenary", {
     p_post_id: postId,
@@ -129,6 +138,10 @@ export async function rejectMercenary(
 ): Promise<void> {
   await requireUser(`/events/${eventId}`);
   if (![eventId, postId, userId].every((id) => UUID_PATTERN.test(id))) return;
+  if ((await getEventPost(eventId))?.id !== postId) {
+    refresh(eventId);
+    return;
+  }
 
   const db = await createServerDb();
   const { error } = await db.rpc("reject_mercenary", {

@@ -29,15 +29,11 @@ export type EventPost = {
 
 /** 일정에 올린 가장 최근의 용병 글. 없으면 null */
 export async function getEventPost(eventId: string): Promise<EventPost | null> {
+  // 용병 글 표는 직접 읽을 수 없고(공개 범위 보호), 같은 팀원에게만 돌려주는 함수로 읽는다.
   const db = await createServerDb();
-  const { data } = await db
-    .from("mercenary_posts")
-    .select("id, needed_count, status")
-    .eq("event_id", eventId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (data as EventPost | null) ?? null;
+  const { data } = await db.rpc("event_mercenary_post", { p_event_id: eventId });
+  const rows = (data ?? []) as EventPost[];
+  return rows[0] ?? null;
 }
 
 export type Applicant = {

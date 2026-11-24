@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/features/auth/queries";
 import { createAdminDb } from "@/lib/db/admin";
+import { friendlyDbError } from "@/lib/db/errors";
 import { createServerDb } from "@/lib/db/server";
 import { attendancePollClosesAt, attendancePollOpensAt } from "@/lib/rules";
 import { formatKst, parseKstLocal } from "@/lib/time";
@@ -78,7 +79,7 @@ export async function proposeSchedule(
     p_proposed_at: startsAt.toISOString(),
     p_location: location,
   });
-  if (error) return { message: error.message };
+  if (error) return { message: friendlyDbError(error) };
 
   const admin = createAdminDb();
   const from = await teamName(admin, fromTeamId);

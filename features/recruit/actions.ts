@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/features/auth/queries";
+import { friendlyDbError } from "@/lib/db/errors";
 import { createServerDb } from "@/lib/db/server";
 
 import { recruitSchema, type RecruitFormState } from "./schemas";
@@ -41,7 +42,7 @@ export async function createRecruitPost(
     p_body: parsed.data.body,
     p_needed_count: parsed.data.neededCount,
   });
-  if (error) return { message: error.message, values };
+  if (error) return { message: friendlyDbError(error), values };
 
   revalidatePath("/recruit");
   redirect("/recruit");

@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireUser } from "@/features/auth/queries";
+import { friendlyDbError } from "@/lib/db/errors";
 import { createServerDb } from "@/lib/db/server";
 
 const UUID_PATTERN =
@@ -35,7 +36,7 @@ export async function recordResult(
     p_home_score: Number(home),
     p_away_score: Number(away),
   });
-  if (error) return { message: error.message };
+  if (error) return { message: friendlyDbError(error) };
 
   revalidatePath(`/tournaments/${tournamentId}`);
   revalidatePath(`/tournaments/${tournamentId}/standings`);

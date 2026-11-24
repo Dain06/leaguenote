@@ -45,12 +45,12 @@ $env:VERCEL_TOKEN = ((Get-Content .env | Where-Object { $_ -like 'VERCEL_TOKEN=*
 npx vercel link --yes --project leaguenote
 ```
 
-환경 변수 4개를 `.env`에서 읽어 등록 (Production, Preview 각각):
+환경 변수 4개를 `.env`에서 읽어 등록 (**Production에만**. 서버 관리 키를 Preview에 넣지 않는다 — 8번 보안 점검 참고):
 
 ```powershell
 foreach ($name in 'NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY','CRON_SECRET') {
   $value = ((Get-Content .env | Where-Object { $_ -like "$name=*" }) -split '=',2)[1].Trim()
-  foreach ($target in 'production','preview') { $value | npx vercel env add $name $target }
+  $value | npx vercel env add $name production
 }
 ```
 
@@ -113,7 +113,28 @@ Supabase 대시보드 → Authentication:
 - 예약 작업 주기 5분
 - **미결정:** 대회 방식(리그전/토너먼트)과 경기 수, 4일 안에 일정이 합의되지 않을 때의 처리(지금은 "미합의" 표시와 알림만), 탈퇴·개인정보 보관 기간
 
-## 8. 알려진 한계
+## 8. 보안 점검 결과 (2026-11-24, 보안 전문가 점검)
+
+**이미 고친 것** (`supabase/migrations/20261123150000_security_hardening.sql` 적용, 코드 반영, 시험 완료)
+- 로그인 후 이동 주소 검사 강화: 탭·줄바꿈 같은 보이지 않는 문자로 다른 사이트로 보내던 우회 차단 (`features/auth/next.ts`, 시험 `tests/auth-next.test.ts`)
+- 용병 글 표 직접 조회 차단(화면은 함수로만 읽음), 팀 모집 글의 작성자 번호 비공개, 소속 확인 함수(`is_team_member_of`) 삭제
+- 데이터베이스에서도 확인하도록 변경: 대회 신청 마감(시작 3주 전) 직접 계산과 최소 인원, 참석 의향·선수 확정·용병 수락 시한, 출석 투표 시간, 일정 등록 때 상태·알림 표시·대회 연결 칸 지정 금지
+- 가입 정보 형식 제약(닉네임 2~12자, 연락처 형식, 시·도 목록, 시군구 길이)과 프로필 수정 범위 제한(시·도 변경 불가)
+- 알림 링크는 앱 안 주소만, 알림 종류는 영문 소문자·밑줄만 허용
+- 보안 헤더 추가(`next.config.ts`): 클릭재킹 방지(`X-Frame-Options`, `frame-ancestors`), `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS
+- 데이터베이스 오류 문구를 그대로 보여 주지 않음(`lib/db/errors.ts`), 용병 수락·거절 때 일정과 글 번호가 맞는지 확인
+- 서버 관리 키 파일에 `server-only` 보호 추가(브라우저 코드가 가져오면 빌드 실패)
+
+**공개 전에 남은 것** (코드 밖 설정이거나 기능 추가가 필요)
+1. **개인정보 처리방침·수집 동의·탈퇴 기능** — 연락처 등을 받으므로 필요합니다. 사용자를 가리키는 칸의 삭제 규칙도 함께 정리해야 계정 삭제가 됩니다. (미구현)
+2. **초대 링크 관리와 팀원 내보내기** — 지금은 7일 동안 누구나 쓸 수 있고 팀원을 내보낼 수 없습니다. (미구현)
+3. **Supabase "Confirm email" 켜기, 최소 비밀번호 8자, Redirect URLs 정리** (4번 항목)
+4. **운영용 Supabase 프로젝트 분리** (Preview 배포에는 관리 키를 넣지 않도록 3번 명령은 Production만 등록하게 이미 고쳤습니다)
+5. **요청 횟수 제한(레이트 리밋)과 별도 SMTP** — Vercel WAF 규칙 또는 Upstash 사용 검토
+6. 예약 작업 비밀 값을 Supabase Vault로 옮기기, 확인 메일 복귀 주소를 고정 환경 변수로 쓰기(낮음)
+7. `npm audit`와 Supabase Security Advisor 실행
+
+## 9. 알려진 한계
 
 - 푸시·카카오톡 알림은 범위 밖이라 앱 안 알림함만 있습니다.
 - 용병은 팀 일정 화면을 볼 수 없어 출석 투표를 하지 않습니다.

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { safeNextPath } from "@/features/auth/next";
 import { requireUser } from "@/features/auth/queries";
 import { markAllNotificationsRead } from "@/features/notifications/actions";
 import { getMyNotifications } from "@/features/notifications/queries";
@@ -59,7 +60,8 @@ async function NotificationsContent() {
           );
           return (
             <li key={item.id}>
-              {item.link ? (
+              {/* 앱 안의 주소로 확인된 링크만 연결한다 */}
+              {item.link && safeNextPath(item.link) === item.link ? (
                 <Link
                   href={item.link}
                   className="block rounded-lg border border-black/10 p-3 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10"

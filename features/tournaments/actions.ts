@@ -73,7 +73,6 @@ export async function applyTournament(
     p_team_size: teamSize,
     p_career_months: careerMonths,
     p_starts_on: startsOn,
-    p_deadline_at: deadline.toISOString(),
   });
 
   if (error) {
