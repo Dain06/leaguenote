@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { isDbConfigured } from "@/lib/db/config";
 import { createServerDb } from "@/lib/db/server";
+import { PRIVACY_VERSION } from "@/lib/privacy";
 
 import { safeNextPath } from "./next";
 import { loginSchema, signupSchema, type AuthFormState } from "./schemas";
@@ -45,7 +46,8 @@ export async function signup(
     email,
     password,
     options: {
-      data: { nickname, phone, city, district },
+      // 동의한 처리방침 버전도 함께 보내 가입 기록(profiles.consent_version)으로 남긴다.
+      data: { nickname, phone, city, district, consent_version: PRIVACY_VERSION },
       // 이메일 확인을 켜 둔 환경에서, 메일의 링크를 누르면 이 주소로 돌아와 로그인이 마무리된다.
       emailRedirectTo: `${await siteOrigin()}/auth/callback?next=${encodeURIComponent(next)}`,
     },

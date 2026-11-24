@@ -1,8 +1,10 @@
 "use client";
 
 // Design Ref: §3.3 회원가입 — 이메일, 비밀번호, 닉네임, 연락처, 거주 시·구
+import Link from "next/link";
 import { useActionState } from "react";
 
+import { MIN_AGE } from "@/lib/privacy";
 import { CITIES } from "@/lib/regions";
 
 import { signup } from "../actions";
@@ -91,6 +93,43 @@ export default function SignupForm({ next = "/" }: { next?: string }) {
         errors={errors?.district}
         required
       />
+
+      <div className="flex flex-col gap-2 rounded-md border border-black/10 p-3 dark:border-white/15">
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="consent"
+            defaultChecked={values?.consent === "on"}
+            className="mt-1"
+          />
+          <span>
+            (필수) 개인정보 수집·이용에 동의합니다. 이메일·닉네임·연락처·거주 지역을 팀 활동과 대회 매칭에 쓰며,
+            탈퇴할 때까지 보관합니다.{" "}
+            <Link href="/privacy" target="_blank" className="underline">
+              처리방침 보기
+            </Link>
+          </span>
+        </label>
+        {errors?.consent?.map((message) => (
+          <p key={message} role="alert" className="text-xs text-red-600 dark:text-red-400">
+            {message}
+          </p>
+        ))}
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="age"
+            defaultChecked={values?.age === "on"}
+            className="mt-1"
+          />
+          <span>(필수) 만 {MIN_AGE}세 이상입니다.</span>
+        </label>
+        {errors?.age?.map((message) => (
+          <p key={message} role="alert" className="text-xs text-red-600 dark:text-red-400">
+            {message}
+          </p>
+        ))}
+      </div>
 
       {state?.message && (
         <p role="alert" className="text-sm text-red-600 dark:text-red-400">

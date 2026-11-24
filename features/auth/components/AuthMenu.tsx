@@ -43,6 +43,9 @@ export default async function AuthMenu() {
       <span data-testid="current-nickname" className="font-medium">
         {user.nickname || "회원"}님
       </span>
+      <Link href="/account" className={itemClass}>
+        내 계정
+      </Link>
       <form action={logout}>
         <button type="submit" className={itemClass}>
           로그아웃

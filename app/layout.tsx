@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 
 import SiteHeader from "@/lib/ui/SiteHeader";
 
@@ -31,6 +32,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
           {children}
         </main>
+        <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-xs text-black/50 dark:text-white/50">
+          <Link href="/privacy" className="underline">
+            개인정보 처리방침
+          </Link>
+        </footer>
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 // Design Ref: §3.3 화면 체크리스트(회원가입) — 입력값을 저장 전에 검사한다 (Zod)
 import { z } from "zod";
 
+import { MIN_AGE } from "@/lib/privacy";
 import { CITIES } from "@/lib/regions";
 
 const email = z.email("이메일 형식이 올바르지 않습니다.");
@@ -33,6 +34,14 @@ export const signupSchema = z.object({
     .trim()
     .min(1, "시·군·구를 입력해 주세요.")
     .max(20, "시·군·구는 20자 이하여야 합니다."),
+  // 체크박스는 체크했을 때만 "on"이 넘어온다.
+  consent: z.literal("on", { error: "개인정보 수집·이용에 동의해 주세요." }),
+  age: z.literal("on", { error: `만 ${MIN_AGE}세 이상임을 확인해 주세요.` }),
+});
+
+export const deleteAccountSchema = z.object({
+  password: z.string().min(1, "비밀번호를 입력해 주세요."),
+  confirm: z.literal("on", { error: "탈퇴 내용을 확인했다는 체크가 필요합니다." }),
 });
 
 /** 서버 액션이 화면에 돌려주는 결과 (오류 문구와 다시 보여줄 입력값) */
