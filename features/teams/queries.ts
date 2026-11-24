@@ -57,18 +57,24 @@ export async function getRoster(teamId: string): Promise<RosterMember[]> {
   return (data ?? []) as RosterMember[];
 }
 
-/** 아직 유효한 가장 최근 초대 코드 (운영자만 볼 수 있다) */
-export async function getActiveInviteCode(teamId: string): Promise<string | null> {
+export type ActiveInvite = {
+  code: string;
+  use_count: number;
+  max_uses: number;
+  expires_at: string;
+};
+
+/** 아직 유효한(만료 전이고 사용 한도가 남은) 가장 최근 초대 (운영자만 볼 수 있다) */
+export async function getActiveInvite(teamId: string): Promise<ActiveInvite | null> {
   const db = await createServerDb();
   const { data } = await db
     .from("invites")
-    .select("code")
+    .select("code, use_count, max_uses, expires_at")
     .eq("team_id", teamId)
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data?.code ?? null;
+    .limit(5);
+  return ((data ?? []) as ActiveInvite[]).find((i) => i.use_count < i.max_uses) ?? null;
 }
 
 /** 이미 쓰인 종목 이름과 그 종목에서 가장 흔한 한 경기 필요 인원 */

@@ -51,12 +51,49 @@ export async function createTeam(
   redirect(`/teams/${data}`);
 }
 
-/** 초대 링크를 새로 만든다. (운영자만 가능: 데이터베이스 규칙이 확인) */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** 초대 링크를 새로 만든다. 이전 링크는 바로 만료된다. (운영자만 가능: 데이터베이스 함수가 확인) */
 export async function createInvite(teamId: string) {
-  const user = await requireUser(`/teams/${teamId}`);
+  await requireUser(`/teams/${teamId}`);
+  if (!UUID_PATTERN.test(teamId)) return;
   const db = await createServerDb();
-  await db.from("invites").insert({ team_id: teamId, created_by: user.id });
+  await db.rpc("create_invite", { p_team_id: teamId });
   revalidatePath(`/teams/${teamId}`);
+}
+
+/** 초대 링크를 끈다. (운영자만) */
+export async function revokeInvites(teamId: string) {
+  await requireUser(`/teams/${teamId}`);
+  if (!UUID_PATTERN.test(teamId)) return;
+  const db = await createServerDb();
+  await db.rpc("revoke_invites", { p_team_id: teamId });
+  revalidatePath(`/teams/${teamId}`);
+}
+
+/** 팀원 내보내기. (운영자만, 일반 팀원만: 데이터베이스 함수가 확인) */
+export async function removeMember(teamId: string, userId: string) {
+  await requireUser(`/teams/${teamId}`);
+  if (!UUID_PATTERN.test(teamId) || !UUID_PATTERN.test(userId)) return;
+  const db = await createServerDb();
+  await db.rpc("remove_team_member", { p_team_id: teamId, p_user_id: userId });
+  revalidatePath(`/teams/${teamId}`);
+  revalidatePath("/", "layout");
+}
+
+/** 내가 팀 나가기. (일반 팀원만) 나간 뒤에는 홈으로 간다. */
+export async function leaveTeam(teamId: string) {
+  await requireUser(`/teams/${teamId}`);
+  if (!UUID_PATTERN.test(teamId)) return;
+  const db = await createServerDb();
+  const { error } = await db.rpc("leave_team", { p_team_id: teamId });
+  if (error) {
+    revalidatePath(`/teams/${teamId}`);
+    return;
+  }
+  revalidatePath("/", "layout");
+  redirect("/");
 }
 
 export type AcceptInviteState = { message?: string } | undefined;

@@ -6,6 +6,8 @@ import { Suspense } from "react";
 import { requireUser } from "@/features/auth/queries";
 import EventList from "@/features/events/components/EventList";
 import { getTeamUpcomingEvents } from "@/features/events/queries";
+import { leaveTeam, removeMember } from "@/features/teams/actions";
+import ConfirmSubmitButton from "@/features/teams/components/ConfirmSubmitButton";
 import InviteSection from "@/features/teams/components/InviteSection";
 import { getRoster, getTeam } from "@/features/teams/queries";
 
@@ -101,11 +103,23 @@ async function TeamContent({ params }: { params: Promise<{ id: string }> }) {
                   </span>
                 )}
               </span>
-              {member.phone && (
-                <span className="text-black/60 dark:text-white/60">
-                  {member.phone}
-                </span>
-              )}
+              <span className="flex items-center gap-3">
+                {member.phone && (
+                  <span className="text-black/60 dark:text-white/60">
+                    {member.phone}
+                  </span>
+                )}
+                {isOperator && member.role === "member" && (
+                  <form action={removeMember.bind(null, id, member.user_id)}>
+                    <ConfirmSubmitButton
+                      className="rounded-md border border-black/20 px-2 py-1 text-xs hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+                      message={`${member.nickname}님을 팀에서 내보낼까요? 앞으로 열릴 일정의 참석·출석 기록도 함께 정리됩니다.`}
+                    >
+                      내보내기
+                    </ConfirmSubmitButton>
+                  </form>
+                )}
+              </span>
             </li>
           ))}
         </ul>
@@ -115,6 +129,25 @@ async function TeamContent({ params }: { params: Promise<{ id: string }> }) {
       </section>
 
       {isOperator && <InviteSection teamId={id} />}
+
+      {!isOperator && (
+        <section
+          aria-label="팀 나가기"
+          className="rounded-lg border border-black/10 p-4 dark:border-white/15"
+        >
+          <form action={leaveTeam.bind(null, id)} className="flex items-center justify-between gap-2">
+            <p className="text-sm text-black/60 dark:text-white/60">
+              더 이상 이 팀에서 활동하지 않나요?
+            </p>
+            <ConfirmSubmitButton
+              className="rounded-md border border-black/20 px-3 py-1.5 text-sm hover:bg-black/5 dark:border-white/25 dark:hover:bg-white/10"
+              message="팀을 나갈까요? 앞으로 열릴 일정의 참석·출석 기록이 정리되고, 다시 들어오려면 새 초대가 필요합니다."
+            >
+              팀 나가기
+            </ConfirmSubmitButton>
+          </form>
+        </section>
+      )}
     </div>
   );
 }
