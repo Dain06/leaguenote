@@ -49,7 +49,8 @@ npx vercel link --yes --project leaguenote
 
 ```powershell
 foreach ($name in 'NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_ANON_KEY','SUPABASE_SERVICE_ROLE_KEY','CRON_SECRET') {
-  $value = ((Get-Content .env | Where-Object { $_ -like "$name=*" }) -split '=',2)[1].Trim()
+  # 운영 값은 .env에 PROD_ 접두사로 저장되어 있다 (개발용 값과 섞이지 않게)
+  $value = ((Get-Content .env | Where-Object { $_ -like "PROD_$name=*" }) -split '=',2)[1].Trim()
   $value | npx vercel env add $name production
 }
 ```
@@ -71,7 +72,8 @@ Supabase 대시보드 → Authentication:
    - 켜면 가입 직후 확인 메일이 가고, 링크를 누르면 `/auth/callback`을 거쳐 로그인됩니다. 확인 전 로그인은 안내 문구가 나옵니다.
 3. **메일 발송 한도:** 기본 메일 서버는 시간당 발송 수가 매우 적어 시범 운영 인원이 가입하기 어렵습니다. 운영 전에 Authentication → SMTP Settings에서 별도 메일 서비스를 연결하는 것을 권장합니다.
 
-> 참고: 개발용과 운영용이 **같은 Supabase 프로젝트**를 씁니다. 운영 전에 아래 6번처럼 가상 데이터를 지우고, 이메일 확인을 켜면 개발 중 시험 가입도 메일이 필요해집니다. 필요하면 운영용 프로젝트를 새로 만들어 `supabase/migrations/`를 순서대로 적용하세요.
+> 개발용(`leaguenote`)과 운영용(`leaguenote-prod`, 2026-11-24 생성, 서울)은 **서로 다른 Supabase 프로젝트**입니다. 운영용에는 마이그레이션 18개가 적용되어 있고 데이터는 비어 있습니다(가상 팀 없음). 운영용 키·비밀번호는 `.env`의 `PROD_` 접두사 값입니다(`PROD_SUPABASE_PROJECT_REF`, `PROD_NEXT_PUBLIC_SUPABASE_URL`, `PROD_NEXT_PUBLIC_SUPABASE_ANON_KEY`, `PROD_SUPABASE_SERVICE_ROLE_KEY`, `PROD_SUPABASE_DB_PASSWORD`, `PROD_CRON_SECRET`). 새 마이그레이션을 만들면 **두 프로젝트에 모두** 적용해야 합니다.
+> 이 4번 설정(이메일 확인·Site URL·Redirect URLs·SMTP)은 **운영용 프로젝트**에 하세요. 개발용에서는 이메일 확인을 켜지 않는 편이 시험에 편합니다.
 
 ## 5. 예약 작업 설정 (Supabase pg_cron, 배포 후 한 번)
 
